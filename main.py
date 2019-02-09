@@ -5,8 +5,9 @@ import datetime
 import queue
 import serial.tools.list_ports
 import threading
-from web_men import _Device
-
+#from web_men import _Device
+#import os
+#import configparser
 
 # class main_Frame(ui.MyFrame):
 #   def __init__(self, parent):
@@ -17,10 +18,13 @@ class _Serial_Proc_Thread( threading.Thread ):
         self._serial = _ser
         self.q_input = q_in
         self.q_out = q_out
+        #self.DEVICEID=''
+        #self.APIKEY=''
         self._time_dev = {}  # num(1-32),timer_flag(定时标志),start_time(定时起始时间),time(定时时间s)
         self.init_dev()  # 初始化字典，用于管理定时事件
         self.start()
         # number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
+
 
     def init_dev(self):
         for i in range( 32 ):
@@ -71,16 +75,34 @@ class _Serial_Proc_Thread( threading.Thread ):
             b[7] = self.uchar_checksum( b )
             # print( b )
         return b
+    def ui_time_flash(self):
+        for key in self._time_dev:
+            #print( key + ':')
+            #print(self._time_dev[key])
+            if self._time_dev[key][0] is 1:  # 定时开启
+                w = (datetime.datetime.now() - self._time_dev[key][1])
+                if w.seconds == self._time_dev[key][2]:  # 定时时间到
+                    continue
+                elif w.seconds < self._time_dev[key][2]:
+                    q=self._time_dev[key][2]-w.seconds
+                    _str =str(q)
+                    self.q_out.put(key+",1"+",1,"+_str ,block=True, timeout=1 )
+
 
     def run(self):
-        # num(1-32),timer_flag(定时标志),start_time(定时起始时间),time(定时时间s)
-        # number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
+        t1=0
+    #num(1-32):timer_flag(定时标志),start_time(定时起始时间),time(定时时间s)
+    #number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
         while True:
+            t1+=1
+            if t1 == 8:
+               t1=0
+               self.ui_time_flash()
             while self.q_input.empty() is not True:  # 输入队列非空
                 _str = self.q_input.get( block=True, timeout=1 )
                 data_arry = _str.split( ',' )
                 if data_arry[1] is "1" and data_arry[2] is "1":  # 定时开启
-                    self._time_dev[data_arry[0]][0] = 0  # 标志等待设备返回设置
+                    self._time_dev[data_arry[0]][0] = 1  # 标志等待设备返回设置
                     self._time_dev[data_arry[0]][1] = datetime.datetime.now()
                     self._time_dev[data_arry[0]][2] = int( data_arry[3] )
                     if self._serial.isOpen():
@@ -94,13 +116,19 @@ class _Serial_Proc_Thread( threading.Thread ):
                     self._time_dev[data_arry[0]][2] = 0
                     if self._serial.isOpen():
                         self._serial.write( self.cmd_stream( data_arry[0], cmd="close", argv=int( data_arry[3] ) ) )
-
+                #elif data_arry[2] is "2":#更新网络信息
+                    #self.conf.read( self.cfgpath, encoding="utf-8" )
+                   # self.DEVICEID = self.conf.get( "NET_CONF", "DEVID" )
+                    #self.APIKEY = self.conf.get( "NET_CONF", "APIKEY" )
+                    #print(self.DEVICEID)
+                    #print(self.APIKEY)
+            time.sleep( 0.04 )
             if self._serial.isOpen() and self._serial.inWaiting():
                 _recv = self._serial.read( 8 )
                 # pub.sendMessage, "update", msg="Thread finished!"
                 # wx.CallAfter( pub.sendMessage,'update', msg=text )
                 print( _recv )
-            time.sleep( 0.06 )
+            time.sleep( 0.04 )
 
 
 if __name__ == '__main__':

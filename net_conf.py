@@ -16,7 +16,7 @@ import wx.xrc
 ###########################################################################
 
 class netDialog( wx.Dialog ):
-    def __init__(self, parent):
+    def __init__(self, parent,devid,apikey):
         wx.Dialog.__init__( self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
                             size=wx.Size( 330, 221 ), style=wx.DEFAULT_DIALOG_STYLE )
 
@@ -58,7 +58,10 @@ class netDialog( wx.Dialog ):
         self.Layout()
 
         self.Centre( wx.BOTH )
-
+        self._devid=devid
+        self._apikey=apikey
+        self.m_textCtrl1.SetLabelText(self._devid)
+        self.m_textCtrl2.SetLabelText(self._apikey)
         # Connect Events
        # self.m_button_save.Bind( wx.EVT_BUTTON, self.save_msg )
        # self.m_button_back.Bind( wx.EVT_BUTTON, self.cancal_msg )

@@ -14,6 +14,9 @@ import serial.tools.list_ports
 import os
 import configparser
 from net_conf import netDialog
+from debug_view import DebugView
+import requests
+import json
 #import queue
 #import timer
 ###########################################################################
@@ -54,7 +57,7 @@ class MyFrame( wx.Frame ):
 
         bSizer2.Add( self.m_button_open_com, 0, wx.ALL | wx.EXPAND | wx.LEFT, 5 )
 
-        self.m_button_connection_ser = wx.Button( self, wx.ID_ANY, u"连接服务器", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_button_connection_ser = wx.Button( self, wx.ID_ANY, u"允许联网", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_button_connection_ser.SetMinSize( wx.Size( -1, 50 ) )
 
         bSizer2.Add( self.m_button_connection_ser, 0, wx.ALL | wx.EXPAND | wx.LEFT, 5 )
@@ -68,14 +71,14 @@ class MyFrame( wx.Frame ):
 
         bSizer10 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox1 = wx.CheckBox( self, wx.ID_ANY, u"1号定时", wx.DefaultPosition, wx.Size( -1, 20 ), 0 )
+        self.m_checkBox1 = wx.CheckBox( self, 2000, u"1号定时", wx.DefaultPosition, wx.Size( -1, 20 ), 0 )
         bSizer10.Add( self.m_checkBox1, 0, wx.ALL, 5 )
 
         m_comboBox1Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox1 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox1 = wx.ComboBox( self, 3000, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox1Choices, 0 )
         self.m_comboBox1.SetSelection( 0 )
         bSizer10.Add( self.m_comboBox1, 0, wx.ALL, 5 )
@@ -83,14 +86,14 @@ class MyFrame( wx.Frame ):
         self.m_button1 = wx.ToggleButton( self,1000, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer10.Add( self.m_button1, 0, wx.ALL, 5 )
         #self.m_button1_1 = wx.ToggleButton()
-        self.m_checkBox2 = wx.CheckBox( self, wx.ID_ANY, u"2号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox2 = wx.CheckBox( self,2001, u"2号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer10.Add( self.m_checkBox2, 0, wx.ALL, 5 )
 
         m_comboBox2Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox2 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox2 = wx.ComboBox( self, 3001, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox2Choices, 0 )
         self.m_comboBox2.SetSelection( 0 )
         bSizer10.Add( self.m_comboBox2, 0, wx.ALL, 5 )
@@ -98,14 +101,14 @@ class MyFrame( wx.Frame ):
         self.m_button2 = wx.ToggleButton( self, 1001, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer10.Add( self.m_button2, 0, wx.ALL, 5 )
 
-        self.m_checkBox3 = wx.CheckBox( self, wx.ID_ANY, u"3号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox3 = wx.CheckBox( self, 2002, u"3号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer10.Add( self.m_checkBox3, 0, wx.ALL, 5 )
 
         m_comboBox3Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox3 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox3 = wx.ComboBox( self, 3002, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox3Choices, 0 )
         self.m_comboBox3.SetSelection( 0 )
         bSizer10.Add( self.m_comboBox3, 0, wx.ALL, 5 )
@@ -117,14 +120,14 @@ class MyFrame( wx.Frame ):
 
         bSizer13 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox4 = wx.CheckBox( self, wx.ID_ANY, u"4号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox4 = wx.CheckBox( self, 2003, u"4号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer13.Add( self.m_checkBox4, 0, wx.ALL, 5 )
 
         m_comboBox4Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox4 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox4 = wx.ComboBox( self, 3003, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox4Choices, 0 )
         self.m_comboBox4.SetSelection( 0 )
         bSizer13.Add( self.m_comboBox4, 0, wx.ALL, 5 )
@@ -132,14 +135,14 @@ class MyFrame( wx.Frame ):
         self.m_button4 = wx.ToggleButton( self,1003, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer13.Add( self.m_button4, 0, wx.ALL, 5 )
 
-        self.m_checkBox5 = wx.CheckBox( self, wx.ID_ANY, u"5号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox5 = wx.CheckBox( self, 2004, u"5号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer13.Add( self.m_checkBox5, 0, wx.ALL, 5 )
 
         m_comboBox5Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox5 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox5 = wx.ComboBox( self, 3004, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox5Choices, 0 )
         self.m_comboBox5.SetSelection( 0 )
         bSizer13.Add( self.m_comboBox5, 0, wx.ALL, 5 )
@@ -147,14 +150,14 @@ class MyFrame( wx.Frame ):
         self.m_button5 = wx.ToggleButton( self, 1004, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer13.Add( self.m_button5, 0, wx.ALL, 5 )
 
-        self.m_checkBox6 = wx.CheckBox( self, wx.ID_ANY, u"6号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox6 = wx.CheckBox( self, 2005, u"6号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer13.Add( self.m_checkBox6, 0, wx.ALL, 5 )
 
         m_comboBox6Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox6 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox6 = wx.ComboBox( self, 3005, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox6Choices, 0 )
         self.m_comboBox6.SetSelection( 0 )
         bSizer13.Add( self.m_comboBox6, 0, wx.ALL, 5 )
@@ -166,14 +169,14 @@ class MyFrame( wx.Frame ):
 
         bSizer17 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox7 = wx.CheckBox( self, wx.ID_ANY, u"7号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox7 = wx.CheckBox( self, 2006, u"7号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer17.Add( self.m_checkBox7, 0, wx.ALL, 5 )
 
         m_comboBox7Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox7 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox7 = wx.ComboBox( self, 3006, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox7Choices, 0 )
         self.m_comboBox7.SetSelection( 0 )
         bSizer17.Add( self.m_comboBox7, 0, wx.ALL, 5 )
@@ -181,14 +184,14 @@ class MyFrame( wx.Frame ):
         self.m_button7 = wx.ToggleButton( self, 1006, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer17.Add( self.m_button7, 0, wx.ALL, 5 )
 
-        self.m_checkBox8 = wx.CheckBox( self, wx.ID_ANY, u"8号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox8 = wx.CheckBox( self, 2007, u"8号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer17.Add( self.m_checkBox8, 0, wx.ALL, 5 )
 
         m_comboBox8Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox8 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox8 = wx.ComboBox( self, 3007, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox8Choices, 0 )
         self.m_comboBox8.SetSelection( 0 )
         bSizer17.Add( self.m_comboBox8, 0, wx.ALL, 5 )
@@ -196,14 +199,14 @@ class MyFrame( wx.Frame ):
         self.m_button8 = wx.ToggleButton( self,1007, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer17.Add( self.m_button8, 0, wx.ALL, 5 )
 
-        self.m_checkBox9 = wx.CheckBox( self, wx.ID_ANY, u"9号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox9 = wx.CheckBox( self, 2008, u"9号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer17.Add( self.m_checkBox9, 0, wx.ALL, 5 )
 
         m_comboBox9Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
-                              u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                              u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                              u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox9 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox9 = wx.ComboBox( self, 3008, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                         m_comboBox9Choices, 0 )
         self.m_comboBox9.SetSelection( 0 )
         bSizer17.Add( self.m_comboBox9, 0, wx.ALL, 5 )
@@ -215,14 +218,14 @@ class MyFrame( wx.Frame ):
 
         bSizer6 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox10 = wx.CheckBox( self, wx.ID_ANY, u"10号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox10 = wx.CheckBox( self, 2009, u"10号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_checkBox10, 0, wx.ALL, 5 )
 
         m_comboBox10Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox10 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox10 = wx.ComboBox( self, 3009, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox10Choices, 0 )
         self.m_comboBox10.SetSelection( 0 )
         bSizer6.Add( self.m_comboBox10, 0, wx.ALL, 5 )
@@ -230,14 +233,14 @@ class MyFrame( wx.Frame ):
         self.m_button10 = wx.ToggleButton( self, 1009, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_button10, 0, wx.ALL, 5 )
 
-        self.m_checkBox11 = wx.CheckBox( self, wx.ID_ANY, u"11号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox11 = wx.CheckBox( self, 2010, u"11号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_checkBox11, 0, wx.ALL, 5 )
 
         m_comboBox11Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox11 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox11 = wx.ComboBox( self, 3010, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox11Choices, 0 )
         self.m_comboBox11.SetSelection( 0 )
         bSizer6.Add( self.m_comboBox11, 0, wx.ALL, 5 )
@@ -245,14 +248,14 @@ class MyFrame( wx.Frame ):
         self.m_button11 = wx.ToggleButton( self, 1010, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_button11, 0, wx.ALL, 5 )
 
-        self.m_checkBox12 = wx.CheckBox( self, wx.ID_ANY, u"12号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox12 = wx.CheckBox( self, 2011, u"12号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer6.Add( self.m_checkBox12, 0, wx.ALL, 5 )
 
         m_comboBox12Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox12 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox12 = wx.ComboBox( self, 3011, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox12Choices, 0 )
         self.m_comboBox12.SetSelection( 0 )
         bSizer6.Add( self.m_comboBox12, 0, wx.ALL, 5 )
@@ -264,14 +267,14 @@ class MyFrame( wx.Frame ):
 
         bSizer8 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox13 = wx.CheckBox( self, wx.ID_ANY, u"13号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox13 = wx.CheckBox( self, 2012, u"13号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer8.Add( self.m_checkBox13, 0, wx.ALL, 5 )
 
         m_comboBox13Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox13 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox13 = wx.ComboBox( self, 3012, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox13Choices, 0 )
         self.m_comboBox13.SetSelection( 0 )
         bSizer8.Add( self.m_comboBox13, 0, wx.ALL, 5 )
@@ -279,14 +282,14 @@ class MyFrame( wx.Frame ):
         self.m_button13 = wx.ToggleButton( self, 1012, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer8.Add( self.m_button13, 0, wx.ALL, 5 )
 
-        self.m_checkBox14 = wx.CheckBox( self, wx.ID_ANY, u"14号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox14 = wx.CheckBox( self, 2013, u"14号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer8.Add( self.m_checkBox14, 0, wx.ALL, 5 )
 
         m_comboBox14Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox14 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox14 = wx.ComboBox( self, 3013, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox14Choices, 0 )
         self.m_comboBox14.SetSelection( 0 )
         bSizer8.Add( self.m_comboBox14, 0, wx.ALL, 5 )
@@ -294,14 +297,14 @@ class MyFrame( wx.Frame ):
         self.m_button14 = wx.ToggleButton( self, 1013, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer8.Add( self.m_button14, 0, wx.ALL, 5 )
 
-        self.m_checkBox15 = wx.CheckBox( self, wx.ID_ANY, u"15号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox15 = wx.CheckBox( self, 2014, u"15号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer8.Add( self.m_checkBox15, 0, wx.ALL, 5 )
 
         m_comboBox15Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox15 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox15 = wx.ComboBox( self, 3014, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox15Choices, 0 )
         self.m_comboBox15.SetSelection( 0 )
         bSizer8.Add( self.m_comboBox15, 0, wx.ALL, 5 )
@@ -313,14 +316,14 @@ class MyFrame( wx.Frame ):
 
         bSizer9 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox16 = wx.CheckBox( self, wx.ID_ANY, u"16号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox16 = wx.CheckBox( self, 2015, u"16号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer9.Add( self.m_checkBox16, 0, wx.ALL, 5 )
 
         m_comboBox16Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox16 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox16 = wx.ComboBox( self, 3015, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox16Choices, 0 )
         self.m_comboBox16.SetSelection( 0 )
         bSizer9.Add( self.m_comboBox16, 0, wx.ALL, 5 )
@@ -328,14 +331,14 @@ class MyFrame( wx.Frame ):
         self.m_button16 = wx.ToggleButton( self, 1015, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer9.Add( self.m_button16, 0, wx.ALL, 5 )
 
-        self.m_checkBox17 = wx.CheckBox( self, wx.ID_ANY, u"17号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox17 = wx.CheckBox( self, 2016, u"17号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer9.Add( self.m_checkBox17, 0, wx.ALL, 5 )
 
         m_comboBox17Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox17 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox17 = wx.ComboBox( self, 3016, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox17Choices, 0 )
         self.m_comboBox17.SetSelection( 0 )
         bSizer9.Add( self.m_comboBox17, 0, wx.ALL, 5 )
@@ -343,14 +346,14 @@ class MyFrame( wx.Frame ):
         self.m_button17 = wx.ToggleButton( self,1016, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer9.Add( self.m_button17, 0, wx.ALL, 5 )
 
-        self.m_checkBox18 = wx.CheckBox( self, wx.ID_ANY, u"18号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox18 = wx.CheckBox( self, 2017, u"18号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer9.Add( self.m_checkBox18, 0, wx.ALL, 5 )
 
         m_comboBox18Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox18 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox18 = wx.ComboBox( self, 3017, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox18Choices, 0 )
         self.m_comboBox18.SetSelection( 0 )
         bSizer9.Add( self.m_comboBox18, 0, wx.ALL, 5 )
@@ -362,14 +365,14 @@ class MyFrame( wx.Frame ):
 
         bSizer101 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox19 = wx.CheckBox( self, wx.ID_ANY, u"19号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox19 = wx.CheckBox( self, 2018, u"19号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer101.Add( self.m_checkBox19, 0, wx.ALL, 5 )
 
         m_comboBox19Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox19 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox19 = wx.ComboBox( self, 3018, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox19Choices, 0 )
         self.m_comboBox19.SetSelection( 0 )
         bSizer101.Add( self.m_comboBox19, 0, wx.ALL, 5 )
@@ -377,14 +380,14 @@ class MyFrame( wx.Frame ):
         self.m_button19 = wx.ToggleButton( self, 1018, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer101.Add( self.m_button19, 0, wx.ALL, 5 )
 
-        self.m_checkBox20 = wx.CheckBox( self, wx.ID_ANY, u"20号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox20 = wx.CheckBox( self, 2019, u"20号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer101.Add( self.m_checkBox20, 0, wx.ALL, 5 )
 
         m_comboBox20Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox20 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox20 = wx.ComboBox( self, 3019, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox20Choices, 0 )
         self.m_comboBox20.SetSelection( 0 )
         bSizer101.Add( self.m_comboBox20, 0, wx.ALL, 5 )
@@ -392,14 +395,14 @@ class MyFrame( wx.Frame ):
         self.m_button20 = wx.ToggleButton( self, 1019, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer101.Add( self.m_button20, 0, wx.ALL, 5 )
 
-        self.m_checkBox21 = wx.CheckBox( self, wx.ID_ANY, u"21号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox21 = wx.CheckBox( self, 2020, u"21号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer101.Add( self.m_checkBox21, 0, wx.ALL, 5 )
 
         m_comboBox21Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox21 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox21 = wx.ComboBox( self, 3020, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox21Choices, 0 )
         self.m_comboBox21.SetSelection( 0 )
         bSizer101.Add( self.m_comboBox21, 0, wx.ALL, 5 )
@@ -411,14 +414,14 @@ class MyFrame( wx.Frame ):
 
         bSizer11 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox22 = wx.CheckBox( self, wx.ID_ANY, u"22号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox22 = wx.CheckBox( self, 2021, u"22号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer11.Add( self.m_checkBox22, 0, wx.ALL, 5 )
 
         m_comboBox22Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox22 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox22 = wx.ComboBox( self, 3021, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox22Choices, 0 )
         self.m_comboBox22.SetSelection( 0 )
         bSizer11.Add( self.m_comboBox22, 0, wx.ALL, 5 )
@@ -426,14 +429,14 @@ class MyFrame( wx.Frame ):
         self.m_button22 = wx.ToggleButton( self, 1021, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer11.Add( self.m_button22, 0, wx.ALL, 5 )
 
-        self.m_checkBox23 = wx.CheckBox( self, wx.ID_ANY, u"23号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox23 = wx.CheckBox( self, 2022, u"23号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer11.Add( self.m_checkBox23, 0, wx.ALL, 5 )
 
         m_comboBox23Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox23 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox23 = wx.ComboBox( self, 3022, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox23Choices, 0 )
         self.m_comboBox23.SetSelection( 0 )
         bSizer11.Add( self.m_comboBox23, 0, wx.ALL, 5 )
@@ -441,14 +444,14 @@ class MyFrame( wx.Frame ):
         self.m_button23 = wx.ToggleButton( self, 1022, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer11.Add( self.m_button23, 0, wx.ALL, 5 )
 
-        self.m_checkBox24 = wx.CheckBox( self, wx.ID_ANY, u"24号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox24 = wx.CheckBox( self, 2023, u"24号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer11.Add( self.m_checkBox24, 0, wx.ALL, 5 )
 
         m_comboBox24Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox24 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox24 = wx.ComboBox( self,3023, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox24Choices, 0 )
         self.m_comboBox24.SetSelection( 0 )
         bSizer11.Add( self.m_comboBox24, 0, wx.ALL, 5 )
@@ -460,14 +463,14 @@ class MyFrame( wx.Frame ):
 
         bSizer12 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox25 = wx.CheckBox( self, wx.ID_ANY, u"25号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox25 = wx.CheckBox( self,2024, u"25号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer12.Add( self.m_checkBox25, 0, wx.ALL, 5 )
 
         m_comboBox25Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox25 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox25 = wx.ComboBox( self, 3024, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox25Choices, 0 )
         self.m_comboBox25.SetSelection( 0 )
         bSizer12.Add( self.m_comboBox25, 0, wx.ALL, 5 )
@@ -475,14 +478,14 @@ class MyFrame( wx.Frame ):
         self.m_button25 = wx.ToggleButton( self, 1024, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer12.Add( self.m_button25, 0, wx.ALL, 5 )
 
-        self.m_checkBox26 = wx.CheckBox( self, wx.ID_ANY, u"26号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox26 = wx.CheckBox( self, 2025, u"26号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer12.Add( self.m_checkBox26, 0, wx.ALL, 5 )
 
         m_comboBox26Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox26 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox26 = wx.ComboBox( self, 3024, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox26Choices, 0 )
         self.m_comboBox26.SetSelection( 0 )
         bSizer12.Add( self.m_comboBox26, 0, wx.ALL, 5 )
@@ -490,14 +493,14 @@ class MyFrame( wx.Frame ):
         self.m_button26 = wx.ToggleButton( self, 1025, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer12.Add( self.m_button26, 0, wx.ALL, 5 )
 
-        self.m_checkBox27 = wx.CheckBox( self, wx.ID_ANY, u"27号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox27 = wx.CheckBox( self, 2026, u"27号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer12.Add( self.m_checkBox27, 0, wx.ALL, 5 )
 
         m_comboBox27Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox27 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox27 = wx.ComboBox( self, 3026, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox27Choices, 0 )
         self.m_comboBox27.SetSelection( 0 )
         bSizer12.Add( self.m_comboBox27, 0, wx.ALL, 5 )
@@ -509,14 +512,14 @@ class MyFrame( wx.Frame ):
 
         bSizer131 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox28 = wx.CheckBox( self, wx.ID_ANY, u"28号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox28 = wx.CheckBox( self, 2027, u"28号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer131.Add( self.m_checkBox28, 0, wx.ALL, 5 )
 
         m_comboBox28Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox28 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox28 = wx.ComboBox( self, 3027, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox28Choices, 0 )
         self.m_comboBox28.SetSelection( 0 )
         bSizer131.Add( self.m_comboBox28, 0, wx.ALL, 5 )
@@ -524,14 +527,14 @@ class MyFrame( wx.Frame ):
         self.m_button28 = wx.ToggleButton( self, 1027, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer131.Add( self.m_button28, 0, wx.ALL, 5 )
 
-        self.m_checkBox29 = wx.CheckBox( self, wx.ID_ANY, u"29号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox29 = wx.CheckBox( self, 2028, u"29号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer131.Add( self.m_checkBox29, 0, wx.ALL, 5 )
 
         m_comboBox29Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox29 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox29 = wx.ComboBox( self, 3028, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox29Choices, 0 )
         self.m_comboBox29.SetSelection( 0 )
         bSizer131.Add( self.m_comboBox29, 0, wx.ALL, 5 )
@@ -539,14 +542,14 @@ class MyFrame( wx.Frame ):
         self.m_button29 = wx.ToggleButton( self, 1028, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer131.Add( self.m_button29, 0, wx.ALL, 5 )
 
-        self.m_checkBox30 = wx.CheckBox( self, wx.ID_ANY, u"30号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox30 = wx.CheckBox( self, 2029, u"30号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer131.Add( self.m_checkBox30, 0, wx.ALL, 5 )
 
         m_comboBox30Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox30 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox30 = wx.ComboBox( self, 3029, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox30Choices, 0 )
         self.m_comboBox30.SetSelection( 0 )
         bSizer131.Add( self.m_comboBox30, 0, wx.ALL, 5 )
@@ -558,14 +561,14 @@ class MyFrame( wx.Frame ):
 
         bSizer14 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_checkBox31 = wx.CheckBox( self, wx.ID_ANY, u"31号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox31 = wx.CheckBox( self, 2030, u"31号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer14.Add( self.m_checkBox31, 0, wx.ALL, 5 )
 
         m_comboBox31Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox31 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox31 = wx.ComboBox( self, 3030, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox31Choices, 0 )
         self.m_comboBox31.SetSelection( 0 )
         bSizer14.Add( self.m_comboBox31, 0, wx.ALL, 5 )
@@ -573,14 +576,14 @@ class MyFrame( wx.Frame ):
         self.m_button31 = wx.ToggleButton( self, 1030, u"状态：关 定时：", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer14.Add( self.m_button31, 0, wx.ALL, 5 )
 
-        self.m_checkBox32 = wx.CheckBox( self, wx.ID_ANY, u"32号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox32 = wx.CheckBox( self, 2031, u"32号定时", wx.DefaultPosition, wx.DefaultSize, 0 )
         bSizer14.Add( self.m_checkBox32, 0, wx.ALL, 5 )
 
         m_comboBox32Choices = [u"30分钟", u"1小时", u"1小时30分", u"2小时", u"2小时30分", u"3小时", u"3小时30分", u"4小时", u"4小时30分",
                                u"5小时", u"5小时30分", u"6小时", u"6小时30分", u"7小时", u"7小时30分", u"8小时", u"8小时30分", u"9小时",
-                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时", u"13小时", u"14小时", u"15小时",
-                               u"16小时", u"17小时", u"18小时"]
-        self.m_comboBox32 = wx.ComboBox( self, wx.ID_ANY, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
+                               u"9小时30分", u"10小时", u"10小时30分", u"11小时", u"11小时30分", u"12小时",u"12小时30分", u"13小时",u"13小时30分", u"14小时",  u"14小时30分",u"15小时",
+                               u"15小时30分",u"16小时",u"16小时30分", u"17小时"]
+        self.m_comboBox32 = wx.ComboBox( self, 3031, u"30分钟", wx.DefaultPosition, wx.DefaultSize,
                                          m_comboBox32Choices, 0 )
         self.m_comboBox32.SetSelection( 0 )
         bSizer14.Add( self.m_comboBox32, 0, wx.ALL, 5 )
@@ -599,7 +602,7 @@ class MyFrame( wx.Frame ):
         # Connect Events
         self.m_button_find_com.Bind( wx.EVT_BUTTON, self.find_com )
         self.m_button_open_com.Bind( wx.EVT_BUTTON, self.open_com )
-        self.m_button_connection_ser.Bind( wx.EVT_CHAR, self.connetion_ser )
+        self.m_button_connection_ser.Bind( wx.EVT_BUTTON, self.connetion_ser )
         self.m_button1.Bind( wx.EVT_TOGGLEBUTTON, self.btn1_event )
         self.m_button2.Bind( wx.EVT_TOGGLEBUTTON, self.btn2_event )
         self.m_button3.Bind( wx.EVT_TOGGLEBUTTON, self.btn3_event )
@@ -632,7 +635,7 @@ class MyFrame( wx.Frame ):
         self.m_button30.Bind( wx.EVT_TOGGLEBUTTON, self.btn30_event )
         self.m_button31.Bind( wx.EVT_TOGGLEBUTTON, self.btn31_event )
         self.m_button32.Bind( wx.EVT_TOGGLEBUTTON, self.btn32_event )
-
+        self.sw_val = {}#缓存开关状态
         self.button_color_init()
         self.timer=wx.Timer(self)
         self.Bind( wx.EVT_TIMER, self.on_timer, self.timer )  # 绑定一个定时器事件
@@ -640,23 +643,43 @@ class MyFrame( wx.Frame ):
         self.serial_is_open=False#串口连接指示
         self.web_is_ava=False#联网指示
         self.web_error_cnt=0#
+        self.web_post_cnt = 0  #
+        self.post_cnt=0
         menuBar = wx.MenuBar()#菜单
         menu = wx.Menu()
-        self._menu_net_conf = menu.Append( -1, u'网络配置' )  #
+        self._menu_net_conf = menu.Append( 0, u'网络配置' )  #
+        self._menu_debug_view = menu.Append(1,u'操作日志查看')
         menuBar.Append( menu, u'设置')
         self.Bind( wx.EVT_MENU, self.menu_net_conf, self._menu_net_conf )
+        self.Bind( wx.EVT_MENU, self.debug_view, self._menu_debug_view )
         self.SetMenuBar( menuBar )
 
         self.q_input=q_in#外部数据输入
         self.q_output=q_out#界面数据传出
         self._serial=ser#串口
 
+        self.DEVICEID=''
+        self.APIKEY=''
+
+        self.curpath = os.path.dirname( os.path.realpath( __file__ ) )
+        self.cfgpath = os.path.join( self.curpath, "cfg.ini" )
+        # 创建管理对象
+        self.conf = configparser.ConfigParser()
+        try:
+            # 先读出来
+            self.conf.read( self.cfgpath, encoding="utf-8" )
+            self.DEVICEID = self.conf.get( "NET_CONF", "DEVID" )
+            self.APIKEY = self.conf.get( "NET_CONF", "APIKEY" )
+        except:
+            pass
+
+
     def __del__(self):
         pass
     def menu_net_conf(self, event):#保存网络配置信息
         #print("twtwtwt")
         #cfgpath
-        _argv=""
+        #_argv=""
         curpath = os.path.dirname( os.path.realpath( __file__ ) )
         cfgpath = os.path.join( curpath, "cfg.ini" )
         # 创建管理对象
@@ -666,26 +689,55 @@ class MyFrame( wx.Frame ):
             conf.read( cfgpath, encoding="utf-8" )
         except:
             self.display_debug_msg(u"读取配置文件出错！")
+            self.DEVICEID = conf.get( "NET_CONF", "DEVID" )
+            self.APIKEY = conf.get( "NET_CONF", "APIKEY" )
+
         # number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
-        self.dlg=netDialog(self)
+        self.dlg=netDialog(self,self.DEVICEID,self.APIKEY)
         if self.dlg.ShowModal() == wx.ID_OK:
             #print(self.dlg.GetText())
             _argv=self.dlg.GetText()
-            
-            self.dlg.Destroy()
+            d=_argv.split( '|' )
+            self.DEVICEID=d[0]
+            self.APIKEY=d[1]
+            try:
+               conf.set( "NET_CONF", "DEVID", d[0] )
+               conf.set( "NET_CONF", "APIKEY",d[1] )
+               conf.write( open( cfgpath, "r+", encoding="utf-8" ) )  # r+模式
+               self.display_debug_msg( u"云平台信息配置成功！" )
+            except:
+               conf.add_section( "NET_CONF" )
+               conf.set( "NET_CONF", "DEVID", d[0] )
+               conf.set( "NET_CONF", "APIKEY", d[1] )
+               conf.write( open( cfgpath, "r+", encoding="utf-8" ) )  # r+模式
+               self.display_debug_msg(u"云平台信息配置成功！！")
+        self.dlg.Destroy()
+    def debug_view(self,event):
+        self.dlgv=DebugView(self)
+        self.dlgv.Set_Text(self.m_textCtrl1.GetValue())
+        if self.dlgv.ShowModal()==wx.ID_OK:
+            self.m_textCtrl1.Clear()
 
+        #elif self.dlgv.ShowModal()==wx.ID_CANCEL:
+    #def net_msg_proc(self):
 
+        self.dlgv.Destroy()
 
     def button_color_init(self):
         for i in range(32):
             wx.ToggleButton.FindWindowById(1000+i).SetBackgroundColour(colour='green')
+            self.sw_val.update({str(i+1): 0})#初始化开关值为0
     def on_timer(self,evt):#
+        self.post_cnt+=1
+        if self.post_cnt ==5:
+            self.post_cnt=0
+            self.http_post_and_get()
+
         now_time = datetime.datetime.now().strftime( '%Y/%m/%d-%H/%M/%S' )
         self.m_statusBar.SetStatusText(now_time , 2 )
         if self.web_is_ava is True:
-            self.m_statusBar.SetStatusText(u"服务器已连接",1)
-        else:
-            self.m_statusBar.SetStatusText(u"服务器已断开",1)
+            self.m_statusBar.SetStatusText(u"网络数据：接收 "+str(self.web_error_cnt)+u"发送 "+str(self.web_post_cnt),1)
+
         if self.serial_is_open is True:
             self.m_statusBar.SetStatusText(u"端口已打开",0)
         else:
@@ -709,21 +761,23 @@ class MyFrame( wx.Frame ):
 
                    #wx.Button.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour=(255, 0, 0, 255))
                 else:
+                    self.sw_val[data_arry[0]]=1
                     #self.m_button1.SetLabelText( u"状态：关闭" )
                     wx.ToggleButton.FindWindowById(999+int(data_arry[0])).SetLabelText( u"状态：关闭" )
                     #wx.Button.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour=(212, 208, 200, 255))
                     wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour='red')
-            else:
+            elif data_arry[1] is "0":
                 if data_arry[2] is "1":#打开状态
+                    self.sw_val[data_arry[0]] = 1
                     wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText(u"关闭")
                     wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour='red' )
                    # wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour=(255, 0, 0, 255) )
 
                 else:
+                    self.sw_val[data_arry[0]] = 0
                     wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText( u"打开" )
                     wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour='green' )
                     #wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour=(255,  208, 200, 255) )
-
 
 
 
@@ -737,7 +791,7 @@ class MyFrame( wx.Frame ):
 
     def display_debug_msg(self,msg):
         #显示调试信息
-        now_time = datetime.datetime.now().strftime( '%Y-%m-%d-%H-%M' )
+        now_time = datetime.datetime.now().strftime( 'LOG:%Y-%m-%d-%H-%M' )
         self.m_textCtrl1.write( now_time + msg+"\n")
             # print("ser")
     # Virtual event handlers, overide them in your derived class
@@ -774,12 +828,102 @@ class MyFrame( wx.Frame ):
             self.m_textCtrl1.Clear()
             self.m_button_open_com.SetBackgroundColour( colour=(212, 208, 200, 255))
 
+
+    def http_post_and_get(self):
+        if self.web_is_ava is True:
+            ################################################
+            url = 'http://api.heclouds.com/devices/%s/datapoints' % (self.DEVICEID)
+            headers = {"api-key": self.APIKEY, "Connection": "close"}
+            data = json.loads( requests.get( url, headers=headers, ).text )
+            #print(data)
+            for i in range(32):
+              try:
+                  for k in data['data']['datastreams']:
+                      if k['id']==("CH"+str(i+1)):
+                          if int( k['datapoints'][0]['value'] ) != self.sw_val[str(i+1)]:
+                             cmd=str(i+1)
+                             if int( k['datapoints'][0]['value'] )==1 and wx.CheckBox.FindWindowById(2000+i).IsChecked():#定时开启
+                              #wx.ComboBox.FindWindowById(2999+int(addr))
+                                _temp = str( (1 + wx.ComboBox.FindWindowById(3000+i).FindString( self.m_comboBox1.GetValue() )) * 30 * 60 )
+                                cmd+=",1,1,"
+                                cmd+=_temp
+                                self.q_output.put(cmd, block=False )
+
+                             elif int( k['datapoints'][0]['value'] )==1:
+                                cmd+=",0,1,0"
+                                print(cmd)
+                                self.q_output.put( cmd, block=False )
+                             elif int( k['datapoints'][0]['value'] )==0:
+                                cmd += ",0,0,0"
+                                self.q_output.put( cmd, block=False )
+                             self.display_debug_msg( u"正在远程操作:%s号通道·····" % str(i+1) )
+                             self.web_error_cnt += 1
+              except:
+                  self.web_error_cnt = -2
+                  pass
+                       #self.m_checkBox32.IsChecked()
+                   # number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
+            ########################################################
+            try:
+              dict = {"datastreams": [{"id": "CH1", "datapoints": [{"value": 0}]},
+                                        {"id": "CH2", "datapoints": [{"value": 0}]},
+                                        {"id": "CH3", "datapoints": [{"value": 0}]},
+                                        {"id": "CH4", "datapoints": [{"value": 0}]},
+                                        {"id": "CH5", "datapoints": [{"value": 0}]},
+                                        {"id": "CH6", "datapoints": [{"value": 0}]},
+                                        {"id": "CH7", "datapoints": [{"value": 0}]},
+                                        {"id": "CH8", "datapoints": [{"value": 0}]},
+                                        {"id": "CH9", "datapoints": [{"value": 0}]},
+                                        {"id": "CH10", "datapoints": [{"value": 0}]},
+                                        {"id": "CH11", "datapoints": [{"value": 0}]},
+                                        {"id": "CH12", "datapoints": [{"value": 0}]},
+                                        {"id": "CH13", "datapoints": [{"value": 0}]},
+                                        {"id": "CH14", "datapoints": [{"value": 0}]},
+                                        {"id": "CH15", "datapoints": [{"value": 0}]},
+                                        {"id": "CH16", "datapoints": [{"value": 0}]},
+                                        {"id": "CH17", "datapoints": [{"value": 0}]},
+                                        {"id": "CH18", "datapoints": [{"value": 0}]},
+                                        {"id": "CH19", "datapoints": [{"value": 0}]},
+                                        {"id": "CH20", "datapoints": [{"value": 0}]},
+                                        {"id": "CH21", "datapoints": [{"value": 0}]},
+                                        {"id": "CH22", "datapoints": [{"value": 0}]},
+                                        {"id": "CH23", "datapoints": [{"value": 0}]},
+                                        {"id": "CH24", "datapoints": [{"value": 0}]},
+                                        {"id": "CH25", "datapoints": [{"value": 0}]},
+                                        {"id": "CH26", "datapoints": [{"value": 0}]},
+                                        {"id": "CH27", "datapoints": [{"value": 0}]},
+                                        {"id": "CH28", "datapoints": [{"value": 0}]},
+                                        {"id": "CH29", "datapoints": [{"value": 0}]},
+                                        {"id": "CH30", "datapoints": [{"value": 0}]},
+                                        {"id": "CH31", "datapoints": [{"value": 0}]},
+                                        {"id": "CH32", "datapoints": [{"value": 0}]}]}
+
+                #for i in range(32):#wx.ToggleButton
+                #wx.ToggleButton.GetBackgroundColour()
+               # if self.sw_val[str(i+1)] == 1:
+                 #   dict['datastreams'][i]['datapoints'][0]['value']=1
+              if "succ"  in requests.post( url, headers=headers, data=json.dumps( dict ) ).text:
+                  self.web_post_cnt+=1
+              else:
+                  self.web_post_cnt=-1
+            except:
+                self.web_post_cnt = -2
+                pass
+
+
     def connetion_ser(self, event):
         event.Skip()
-        self.display_debug_msg( u"正在连接OneNet···" )
-
-
-
+        if  self.web_is_ava is False:
+            self.web_is_ava = True
+            self.web_error_cnt=0
+            self.display_debug_msg( u"设置允许连接OneNet···" )
+            self.m_button_connection_ser.SetBackgroundColour(colour='red')
+            self.m_button_connection_ser.SetLabelText(u"已允许联网")
+        else:
+            self.web_is_ava = False
+            self.display_debug_msg( u"设置禁止连接OneNet···" )
+            self.m_button_connection_ser.SetBackgroundColour(colour=(212, 208, 200, 255) )
+            self.m_button_connection_ser.SetLabelText( u"已禁止联网" )
     def btn1_event(self, event):
         event.Skip()
         #print(self.m_button1.GetValue())
