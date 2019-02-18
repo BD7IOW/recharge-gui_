@@ -16,15 +16,16 @@ import configparser
 from net_conf import netDialog
 from debug_view import DebugView
 import requests
+
+import time
+
 import json
-#import queue
-#import timer
 ###########################################################################
 ## Class MyFrame
 ###########################################################################
 
 class MyFrame( wx.Frame ):
-    def __init__(self, parent,q_in,q_out,ser):
+    def __init__(self, parent,q_in,q_out,ser,eqin,eqout):
         wx.Frame.__init__( self, parent, id=wx.ID_ANY, title=u"充电管理", pos=wx.DefaultPosition, size=wx.Size( 1043, 512 ),
                            style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL )
 
@@ -638,13 +639,19 @@ class MyFrame( wx.Frame ):
         self.sw_val = {}#缓存开关状态
         self.button_color_init()
         self.timer=wx.Timer(self)
+        self.timer_edp = wx.Timer( self )
         self.Bind( wx.EVT_TIMER, self.on_timer, self.timer )  # 绑定一个定时器事件
-        self.timer.Start( 900 )  # 设定时间间隔为900毫秒,并启动定时器,刷新按键显示
+        self.Bind( wx.EVT_TIMER, self._edp_data_get, self.timer_edp)
+
         self.serial_is_open=False#串口连接指示
         self.web_is_ava=False#联网指示
         self.web_error_cnt=0#
         self.web_post_cnt = 0  #
-        self.post_cnt=0
+
+        #self.socket_cnt=False#socket连接指示
+        #self.socket_timeout=[0,0]#连接指示位+超时时间
+        #self.edp_cmd_order=True
+        self.serial_cnt=0
         menuBar = wx.MenuBar()#菜单
         menu = wx.Menu()
         self._menu_net_conf = menu.Append( 0, u'网络配置' )  #
@@ -658,22 +665,18 @@ class MyFrame( wx.Frame ):
         self.q_output=q_out#界面数据传出
         self._serial=ser#串口
 
+        self.edp_qin=eqin
+        self.edp_qout=eqout
+
         self.DEVICEID=''
         self.APIKEY=''
 
-        self.curpath = os.path.dirname( os.path.realpath( __file__ ) )
-        self.cfgpath = os.path.join( self.curpath, "cfg.ini" )
-        # 创建管理对象
-        self.conf = configparser.ConfigParser()
-        try:
-            # 先读出来
-            self.conf.read( self.cfgpath, encoding="utf-8" )
-            self.DEVICEID = self.conf.get( "NET_CONF", "DEVID" )
-            self.APIKEY = self.conf.get( "NET_CONF", "APIKEY" )
-        except:
-            pass
-
-
+        #self.rec_thread = Thread( target=self.edp_rec_msg_handle, args=(self.client,self.sock) )
+        # 设置成守护线程
+        #self.rec_thread.setDaemon( True )
+        self.timer.Start( 900 )  # 设定时间间隔为900毫秒,并启动定时器,刷新按键显示
+        self.timer_edp.Start( 1500 )
+        #self.rec_thread.start()
     def __del__(self):
         pass
     def menu_net_conf(self, event):#保存网络配置信息
@@ -728,18 +731,12 @@ class MyFrame( wx.Frame ):
             wx.ToggleButton.FindWindowById(1000+i).SetBackgroundColour(colour='green')
             self.sw_val.update({str(i+1): 0})#初始化开关值为0
     def on_timer(self,evt):#
-        self.post_cnt+=1
-        if self.post_cnt ==5:
-            self.post_cnt=0
-            self.http_post_and_get()
 
         now_time = datetime.datetime.now().strftime( '%Y/%m/%d-%H/%M/%S' )
         self.m_statusBar.SetStatusText(now_time , 2 )
-        if self.web_is_ava is True:
-            self.m_statusBar.SetStatusText(u"网络数据：接收 "+str(self.web_error_cnt)+u"发送 "+str(self.web_post_cnt),1)
 
         if self.serial_is_open is True:
-            self.m_statusBar.SetStatusText(u"端口已打开",0)
+            self.m_statusBar.SetStatusText(u"端口已打开 "+"设备数据接收计数："+str(self.serial_cnt),0)
         else:
             self.m_statusBar.SetStatusText(u"端口已关闭",0)
 
@@ -753,32 +750,38 @@ class MyFrame( wx.Frame ):
             #if data_arry[0] is "67":#错误码
                 #67,num(1-32),flag(1成功，0失败)，
              #   if data_arry[1] is
-            if data_arry[1] is "1":#定时
-                if data_arry[2] is "1":#打开状态
+            if data_arry[1] == "1":#定时
+                if data_arry[2] == "1":#打开状态
 
                     wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText(str(datetime.timedelta(seconds=int(data_arry[3])))+u"后关")
-
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour='red')
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetValue(True)
+                    self.sw_val[data_arry[0]] = 1
 
                    #wx.Button.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour=(255, 0, 0, 255))
                 else:
-                    self.sw_val[data_arry[0]]=1
+                    self.sw_val[data_arry[0]]=0
                     #self.m_button1.SetLabelText( u"状态：关闭" )
                     wx.ToggleButton.FindWindowById(999+int(data_arry[0])).SetLabelText( u"状态：关闭" )
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetValue( False )
                     #wx.Button.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour=(212, 208, 200, 255))
-                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour='red')
-            elif data_arry[1] is "0":
-                if data_arry[2] is "1":#打开状态
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour(colour='green')
+            elif data_arry[1] == "0":
+                if data_arry[2] == "1":#打开状态
                     self.sw_val[data_arry[0]] = 1
-                    wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText(u"关闭")
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetValue( True )
+                    wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText(u"已打开")
                     wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour='red' )
                    # wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour=(255, 0, 0, 255) )
 
                 else:
                     self.sw_val[data_arry[0]] = 0
-                    wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText( u"打开" )
+                    wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetValue( False )
+                    wx.ToggleButton.FindWindowById( 999+int(data_arry[0]) ).SetLabelText( u"已关闭" )
                     wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour='green' )
                     #wx.ToggleButton.FindWindowById( 999 + int( data_arry[0] ) ).SetBackgroundColour( colour=(255,  208, 200, 255) )
-
+            if data_arry[0] == "67":#串口接收数据指示
+                self.serial_cnt=int(data_arry[3])
 
 
 
@@ -813,12 +816,14 @@ class MyFrame( wx.Frame ):
                 self._serial.baudrate = 9600
                 self._serial.open()
                 self.serial_is_open=True
+
             except Exception:
                 self.display_debug_msg(u"串口打开失败")
             else:
             #self.display_debug_msg( u"101-182关闭串口")
                 self.m_button_open_com.SetLabelText(u"关闭端口")
-                print(self.m_button_open_com.GetBackgroundColour())
+                #self.serial_cnt=0
+                #print(self.m_button_open_com.GetBackgroundColour())
                 self.m_button_open_com.SetBackgroundColour(colour=(255, 0, 0, 255))
         else:
             self._serial.close()
@@ -827,88 +832,45 @@ class MyFrame( wx.Frame ):
             self.m_button_open_com.SetLabelText( u"打开端口" )
             self.m_textCtrl1.Clear()
             self.m_button_open_com.SetBackgroundColour( colour=(212, 208, 200, 255))
+        self.serial_cnt = 0
 
 
-    def http_post_and_get(self):
-        if self.web_is_ava is True:
-            ################################################
-            url = 'http://api.heclouds.com/devices/%s/datapoints' % (self.DEVICEID)
-            headers = {"api-key": self.APIKEY, "Connection": "close"}
-            data = json.loads( requests.get( url, headers=headers, ).text )
-            #print(data)
-            for i in range(32):
-              try:
-                  for k in data['data']['datastreams']:
-                      if k['id']==("CH"+str(i+1)):
-                          if int( k['datapoints'][0]['value'] ) != self.sw_val[str(i+1)]:
-                             cmd=str(i+1)
-                             if int( k['datapoints'][0]['value'] )==1 and wx.CheckBox.FindWindowById(2000+i).IsChecked():#定时开启
-                              #wx.ComboBox.FindWindowById(2999+int(addr))
-                                _temp = str( (1 + wx.ComboBox.FindWindowById(3000+i).FindString( self.m_comboBox1.GetValue() )) * 30 * 60 )
-                                cmd+=",1,1,"
-                                cmd+=_temp
-                                self.q_output.put(cmd, block=False )
 
-                             elif int( k['datapoints'][0]['value'] )==1:
-                                cmd+=",0,1,0"
-                                print(cmd)
-                                self.q_output.put( cmd, block=False )
-                             elif int( k['datapoints'][0]['value'] )==0:
-                                cmd += ",0,0,0"
-                                self.q_output.put( cmd, block=False )
-                             self.display_debug_msg( u"正在远程操作:%s号通道·····" % str(i+1) )
-                             self.web_error_cnt += 1
-              except:
-                  self.web_error_cnt = -2
-                  pass
-                       #self.m_checkBox32.IsChecked()
-                   # number(1-32),timer_flag(定时标志，1定时，0非定时),key_flag(1打开状态，0关闭)，time(倒计时秒)
-            ########################################################
-            try:
-              dict = {"datastreams": [{"id": "CH1", "datapoints": [{"value": 0}]},
-                                        {"id": "CH2", "datapoints": [{"value": 0}]},
-                                        {"id": "CH3", "datapoints": [{"value": 0}]},
-                                        {"id": "CH4", "datapoints": [{"value": 0}]},
-                                        {"id": "CH5", "datapoints": [{"value": 0}]},
-                                        {"id": "CH6", "datapoints": [{"value": 0}]},
-                                        {"id": "CH7", "datapoints": [{"value": 0}]},
-                                        {"id": "CH8", "datapoints": [{"value": 0}]},
-                                        {"id": "CH9", "datapoints": [{"value": 0}]},
-                                        {"id": "CH10", "datapoints": [{"value": 0}]},
-                                        {"id": "CH11", "datapoints": [{"value": 0}]},
-                                        {"id": "CH12", "datapoints": [{"value": 0}]},
-                                        {"id": "CH13", "datapoints": [{"value": 0}]},
-                                        {"id": "CH14", "datapoints": [{"value": 0}]},
-                                        {"id": "CH15", "datapoints": [{"value": 0}]},
-                                        {"id": "CH16", "datapoints": [{"value": 0}]},
-                                        {"id": "CH17", "datapoints": [{"value": 0}]},
-                                        {"id": "CH18", "datapoints": [{"value": 0}]},
-                                        {"id": "CH19", "datapoints": [{"value": 0}]},
-                                        {"id": "CH20", "datapoints": [{"value": 0}]},
-                                        {"id": "CH21", "datapoints": [{"value": 0}]},
-                                        {"id": "CH22", "datapoints": [{"value": 0}]},
-                                        {"id": "CH23", "datapoints": [{"value": 0}]},
-                                        {"id": "CH24", "datapoints": [{"value": 0}]},
-                                        {"id": "CH25", "datapoints": [{"value": 0}]},
-                                        {"id": "CH26", "datapoints": [{"value": 0}]},
-                                        {"id": "CH27", "datapoints": [{"value": 0}]},
-                                        {"id": "CH28", "datapoints": [{"value": 0}]},
-                                        {"id": "CH29", "datapoints": [{"value": 0}]},
-                                        {"id": "CH30", "datapoints": [{"value": 0}]},
-                                        {"id": "CH31", "datapoints": [{"value": 0}]},
-                                        {"id": "CH32", "datapoints": [{"value": 0}]}]}
+    def _edp_data_get(self,evt):
+        s=""
+        k=0
+        #wx.ComboBox.
+        #print( wx.ComboBox.FindWindowById() )
+        for i in range(32):
+            if self.sw_val[str(k+1)]  == 1:
+                s=s+"1:"
+            elif self.sw_val[str(k+1)] == 0:
+                s=s+"0:"
+            k+=1
 
-                #for i in range(32):#wx.ToggleButton
-                #wx.ToggleButton.GetBackgroundColour()
-               # if self.sw_val[str(i+1)] == 1:
-                 #   dict['datastreams'][i]['datapoints'][0]['value']=1
-              if "succ"  in requests.post( url, headers=headers, data=json.dumps( dict ) ).text:
-                  self.web_post_cnt+=1
-              else:
-                  self.web_post_cnt=-1
-            except:
-                self.web_post_cnt = -2
-                pass
+        #print(s[:-1])
+        self.edp_qout.put( s[:-1], block=True, timeout=1 )
+        while self.edp_qin.empty() is not True:
+            _str = self.edp_qin.get( block=True, timeout=1 )
+            data_arry = _str.split( ':' )
+            if data_arry[0] == "CONN_CNNT":#socket已连接
+                self.m_statusBar.SetStatusText(u"网络连接成功", 1 )
+            elif data_arry[0].isdigit():
+                if data_arry[1]=="0":#关闭
+                    self.q_output.put( data_arry[0]+",0,0,0", block=False )
+                    self.display_debug_msg( u"注意--正在远程关闭通道"+data_arry[0] )
+                elif data_arry[1]=="1":
+                     if wx.CheckBox.FindWindowById(1999+int(data_arry[0])).IsChecked():#定时开启
+                         #wx.CheckBox.IsChecked()
+                         _temp = str( (1 + wx.ComboBox.FindWindowById(2999+int(data_arry[0])).FindString( wx.ComboBox.FindWindowById(2999+int(data_arry[0])).GetValue() )) * 30 * 60 )
+                         self.q_output.put( data_arry[0] + ",1,1,"+_temp, block=False )
+                         self.display_debug_msg( u"注意--正在远程定时通道" + data_arry[0] )
+                     else:
+                         self.q_output.put( data_arry[0] + ",0,1,0" , block=False )
+                         self.display_debug_msg( u"注意--正在远程打开通道" + data_arry[0] )
+            elif data_arry[0] == "CONN_CLOSE":
+                self.m_statusBar.SetStatusText( u"网络连接断开:"+data_arry[1], 1 )
+            else:continue
 
 
     def connetion_ser(self, event):
@@ -919,8 +881,10 @@ class MyFrame( wx.Frame ):
             self.display_debug_msg( u"设置允许连接OneNet···" )
             self.m_button_connection_ser.SetBackgroundColour(colour='red')
             self.m_button_connection_ser.SetLabelText(u"已允许联网")
+            self.edp_qout.put("send_cnn:none",block=True,timeout=1)
         else:
             self.web_is_ava = False
+            self.edp_qout.put("cnn_close:none",block=True,timeout=1)
             self.display_debug_msg( u"设置禁止连接OneNet···" )
             self.m_button_connection_ser.SetBackgroundColour(colour=(212, 208, 200, 255) )
             self.m_button_connection_ser.SetLabelText( u"已禁止联网" )
@@ -934,7 +898,7 @@ class MyFrame( wx.Frame ):
             _cmd=_cmd+"1,"
         else:
             _cmd=_cmd+"0,"
-        if self.m_button1.GetValue() is False:#按键已被打开，现在关闭
+        if self.m_button1.GetValue() == False:#按键已被打开，现在关闭
             #print(u"红色")
             #打开状态 Queue.put(item, [block[, timeout]])
             _cmd=_cmd+"0,0"
@@ -965,7 +929,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button2.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button2.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -996,7 +960,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button3.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button3.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1027,7 +991,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button4.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button4.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1058,7 +1022,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button5.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button5.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1089,7 +1053,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button6.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button6.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1120,7 +1084,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button7.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button7.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1151,7 +1115,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button8.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button8.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1182,7 +1146,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button9.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button9.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1213,7 +1177,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button10.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button10.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1244,7 +1208,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button11.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button11.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1275,7 +1239,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button12.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button12.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1306,7 +1270,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button13.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button13.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1337,7 +1301,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button14.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button14.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1368,7 +1332,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button15.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button15.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1399,7 +1363,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button16.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button16.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1430,7 +1394,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button17.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button17.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1461,7 +1425,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button18.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button18.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1492,7 +1456,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button19.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button19.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1523,7 +1487,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button20.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button20.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1554,7 +1518,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button21.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button21.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1585,7 +1549,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button22.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button22.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1616,7 +1580,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button23.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button23.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1647,7 +1611,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button24.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button24.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1678,7 +1642,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button25.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button25.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1709,7 +1673,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button26.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button26.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1740,7 +1704,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button27.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button27.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1771,7 +1735,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button28.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button28.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1802,7 +1766,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button29.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button29.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1833,7 +1797,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button30.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button30.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1864,7 +1828,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button31.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button31.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"
@@ -1895,7 +1859,7 @@ class MyFrame( wx.Frame ):
             _cmd = _cmd + "1,"
         else:
             _cmd = _cmd + "0,"
-        if self.m_button32.GetValue() is False:  # 按键已被打开，现在关闭
+        if self.m_button32.GetValue() == False:  # 按键已被打开，现在关闭
             # print(u"红色")
             # 打开状态 Queue.put(item, [block[, timeout]])
             _cmd = _cmd + "0,0"

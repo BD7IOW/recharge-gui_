@@ -44,7 +44,7 @@ class netDialog( wx.Dialog ):
 
         bSizer2 = wx.BoxSizer( wx.HORIZONTAL )
 
-        self.m_button_save = wx.Button( sbSizer1.GetStaticBox(), wx.ID_OK, u"保存", wx.DefaultPosition, wx.DefaultSize,
+        self.m_button_save = wx.Button( sbSizer1.GetStaticBox(), wx.ID_OK, u"保存(重启软件生效)", wx.DefaultPosition, wx.DefaultSize,
                                         0 )
         bSizer2.Add( self.m_button_save, 0, wx.ALL, 5 )
 
